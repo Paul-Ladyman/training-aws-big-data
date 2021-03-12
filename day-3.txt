@@ -1,0 +1,53 @@
+# Spark
+
+* Spark tries to address inefficiencies in Hadoop/MapReduce when it comes to machine learning operations
+* ML often involves performing many iterations of calculations over large data sets. In traditional MR the dataset would be read from disk for each iteration, which of course is inefficient
+* Spark aims to read the data from disk once and hold it in RAM, whilst allowing multiple sequential map steps to be run on it before reducing the results and writing to disk
+* Spark is also potentially faster than traditional MapReduce as it is able to reused Java containers, rather than creating new ones for each MR operation
+* Spark is often run on top of Hadoop/HDFS but doesn't have to
+* Spark uses Resilient Distributed Datasets (RDD) to hold large datasets in RAM distributed across multiple nodes. Each operation (like map) results in a new RDD.
+* An optimser works to limit the amount of RAM required but Spark is still memory-intensive and without care can end up being significantly slower than Hadoop/MR
+* Spark builds a Direct Acyclic Graph (DAG) for each RDD
+* Spark supports running arbritrary SQL queries over the RDD
+* Spark is natively support on AWS EMR
+
+# Flink
+
+* Spark can handle "microbatches", were the data window is sub-second but does not truely stream the data
+* Flink tries to address inefficiencies in Spark for handling true streaming
+
+# AWS Glue
+
+* A serverless tool for performing Extract, Transform and Load operations (ETL)
+* AWS Data Pipeline could be used as an alternative but focuses on the infrastructure within the pipeline, whereas Glue focuses on the data processing and has largely superseded Data Pipeline
+* ETL is where most of the time in a Big Data pipeline is spent
+* Glue is made up of a data catalog, etl engine and job orchestration
+* Data Catalog: persistent metadata store and classifiers that examine and categorise data, including automatic schema inference
+* ETL Engine: Actually runs the ETL jobs based on data sources identified in the data catalog.
+* Job orchestration: Glue supports on demand or scheduled invocations. Jobs can be triggered by a variety of events like Lambda functions or other Glue jobs. Supports job bookmarks to keep track of where in the data the job has processed up to, so jobs can be paused and restarted, only run on new data, etc.
+* Glue provides development endpoints for testing ETL scripts locally during development
+
+# Pricing
+
+* EMR uses EC2 instances for its clusters. Each instance must be paid for along with things like EBS, networking, etc. EMR has an additional upcharge adding per instance. Any related tools like S3, dynamo, etc must also be paid for
+* Transient EMR clusters may work out cheaper than long-running clusters
+* EMR supports custom auto-scaling policies for the EC2 instances behind it so these can also be tweaked according to cost, e.g. by scaling down in times of low demand
+* The usual EC2 pricing options also apply, including choosing between on-demand, reserved and spot instances
+* Using spot instances can save a lot of money if the workload can tolerate potentially being interrupted
+* Kinesis will charge for data throughput
+* Redshift price based on the compressed data volume
+
+# Visualisation
+
+* Traditional solutions are quite expensive e.g. Tableau, Spotfire, Jaspersoft
+* AWS QuickSight is much lower cost
+* Most visualisation tools expect an sql-based solution
+
+# Big Data Design Patterns
+
+Common Patterns
+
+* Interactive queries/Batch processing
+  * TBs of logs ingested in S3, then loaded into EMR and analysed with Spark/Hive are analysed directly in S3 using Athena
+* Stream processing
+  * streamed into AWS using Kinesis, processed using EMR/Hive

@@ -1,0 +1,88 @@
+# A history of Hadoop
+
+1969 - origins of the Internet (ARPANET - Oct 1969)
+1971 - Email introduced
+1973 - FTP introduced
+1991 - World Wide Web goes public (outside CERN)
+1994 - Yahoo founded - "Jerry and David's guide to the World Wide Web"
+1994 - Amazon founded (July)
+1995 - Yahoo Search introduced
+1996 - Google founded
+2000 - Age of the Internet
+2003 - GFS paper (Ghemawat et al)
+2004 - MapReduce Paper (Dean & Ghemawat) (December)
+2006 - Doug Cutting (yahoo) re-writes GFS + MR in Java
+2006 - Hadoop 0.1.0 released
+2006 - PIG developed internally at Yahoo (released 2007)
+2007 - HIVE developed internally at Facebook (released 2010)
+2008 - Cloudera formed (selling Hadoop + proprietary software + services)
+2009 - AWS releases first EMR
+2009 - MapR founded (MapR-FS is a re-write of HDFS in C++)
+2011 - Hortonworks formed
+2011 - Spark RDD paper (Zaharia et al)
+2012 - Spark starts to take off
+2014 - Flink released by Apache (TU+HU Berlin)
+
+# Hadoop
+
+* Map/reduce solution from Apache
+* Map/reduce is an old concept with its roots in LISP
+* Hadoop has its roots in dealing with search engine implementations around the point the web grew too large to deal with in a non-distributed relational query
+* Theoretical work towards distributed processing frameworks done in papers like GFS paper (Ghemawat et al), MapReduce Paper (Dean + Ghemawat)
+* Yahoo employs Doug Cutting to produce the first version of Hadoop, which implements GFS and MR in Java, in 2006
+* In the same year Yahoo developed the PIG language, which compiles into MapReduce Java code and allows MR algorithms to be produced without needing to know Java
+* Some time later Facebook create Apache Hive which allows MR queries to be written in an SQL-like language, which again gets compiled into MR Java code
+* Hadoop is a generic distributed processing platform underpinning these higher-level solutions. It is not a relational databases, and unlike relational DBs it scales well horizontally
+* Some former Yahoo employees formed Cloudera in 2008 to sell Hadoop with proprietary software and services
+* AWS released EMR in 2009, their own distribution of Hadoop
+
+## Distributed Storage
+* Hadoop Distributed File System (HDFS)
+* Hadoop cluster consists of a master and multiple nodes
+* Takes a single file and breaks it into blocks. Each block replicated across a number of distributed nodes for redundency
+
+## Distributed Processing
+* MapReduce algorithm
+* Mapper works on a subset of the data on each nodes. Multiple mappers run in parallel as distributed processes
+* Mapper outputs data mapped into key/value pairs. These pairs can be filtered/sorted/combined on a given node ahead of being reduced.
+* Reducers aggregates the mapper key/value pairs, collecting all values with a common key. Multiple reducers can be used for performance.
+* Data partitioning can improve processing performance since some partitions can be ignored based on the query, only processing data within a certain date range for example
+
+# AWS EMR
+
+* AWS's own distribution of Hadoop provided as a managed service with the usual AWS niceties
+* Typically uses Tez which is a MapReduce system optimised for use with SQL queries
+* Originally ElasticMapReduce though no longer restricted to MapReduce operations
+* AWS hosts a number of public datasets that are ready for use with EMR
+* EMR has master node, core nodes and task nodes
+  * Maste node orchestrates the workers as usual
+  * Core nodes run HDFS and are responsible for storage and compute. The size of the core node group determines the HDFS data replication factor
+  * Task nodes are optional and can be used to run additional compute processes (without requiring HDFS) and stream data from Core nodes
+* Capable of querying data directly in S3, like Athena
+* Doesn't necessarily have to use the HDFS, AWS provide tools for dealing with data in their own storage solutions instead, like S3 and dynamoDB
+* Data processing applications can be written in common programming languages, or Hive and other MapReduce frameworks. These applications are uploaded to S3 (as jars of Hive files for example) and EMR retrieves them from there
+* EMR clusters can be transient, where they are terminated on completion, or long-running, where they are running perminently and data is more likely stored in HDFS. Frequently run jobs may work out cheaper using a long-running cluster. AWS recommends using transient clusters and S3 for storage rather than HDFS. Logs for transient clusters are persisted.
+* HDFS may still be useful for transient clusters, for example to temporarily store the results of querying external tables (like S3) in order to join them and save the results in another external table
+* Uses EC2 instances under the hood for cluster nodes and the instance types can be configured
+* The unit of work in EMR is a Step. Steps can be submitted to the cluster to be performed. By default Steps are queued by FIFO but they cluster can be set to run steps in parallel
+
+# Other Hadoop tools
+
+* Hue - Hadoop User Experience
+  * Web interface providing a set of tools for managing Hadoop clusters
+  * Alternatives include Apache Zeppelin, JupyterHub, which are both Jupyter-style notebook interfaces
+* Most Hadoop-related tools provide their own web interfaces, including Hadoop itself
+* AWS EMR has built-in Cloudwatch monitoring
+* Ganglia - Hadoop monitoring software installed on the nodes themselves
+
+# AWS Redshift
+
+* A data warehouse
+* Data warehouses are designed to allow ad-hoc, potentially heavy/long-running queries to be made without disrupting the performance of the production data, often by running on a copy of the data.
+* Data warehouses are optimised for read. Redshift for example stores data in in a columnar format. The data itself can also be optimised for reads using techniques like denormalisation
+* Most data warehouse solutions are based on SQL databases and may include additional statistical functionalities
+* Data warehouses often bring in data from many different sources to make querying easier over disparate datasets
+* Date warehouses may also be used to keep historical records of data and are likely to scale to support large volumes of data
+* Redshift costs $1000/TB/year
+* Redshift exists as a cluster of instances and data is replicated across nodes, which are orchestrated by a leader node
+* Redshift is distributed and so is eventually consistent. Compared with Aurora for example which is a single instance.

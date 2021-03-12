@@ -1,0 +1,85 @@
+# Reading
+Andrew Tennenbaum - computer networks
+
+# Big Data
+
+* Concept has existed for a fairly long time. See "Very large database" term from the 90s
+* Can be defined by the three Vs; high-volume, high-velocity and/or high-variety data. These features demand new forms of processing the data. The data and how it is processed can enable enhanced insights, giving a fourth V - value
+  * Volume - number of bytes
+  * Velocity - rate of data being produced, possibly from many different sources
+  * Variety - structured vs unstructured data. Structured data has a schema. Unstructured data doesn't _yet_ have a schema and is amiguous as to its meaning. Log messages are a good example. The have information a human can process but to a machine they're just a string, they need to be processed to be made more structured
+* Traditional, single-processor platforms, cannot handle big data. We are forced to use distributed processes to collect, store, organise, analyse, move and share data
+
+# Data Pipeline
+
+* raw data > data ingestion > data storage > processing > visualisation
+* Relational databases solve all of these steps in a single tool but do not scale to cope well with Big Data
+* The data pipeline decouples these steps and uses different specialist tools to handle each one in a distributed pipeline
+* There may be advantages to using this approach to handle data not necessarily considered "Big"
+* Considerations around data structure, latency, throughput and access patterns will determine the choice of tool
+
+# Ingestion and Transfer
+
+* Start of pipeline. Handling incoming data in order to store it.
+* Data could be transactional from database reads/writes, file-based, stream-based
+* Tools like AWS Kinesis or Apache Flume allow for high ingestion rates and often use buffers to control the throughput of data
+* AWS allows on-premises data sources to be connected to AWS infrastructure via VPN or direct physical networking (AWS Direct Connect, though this can take months to set up). Files can be ingested via multipart upload to S3. AWS Snowball is a service for transferring data on physical disks to AWS - this is useful for transferring large amounts of data. For ~20TB or more it's actually quicker to phsyically deliver the data rather than send it over a network. AWS Snowmobile is literally a shipping container with 100 petabyte (0.1 exabyte) storage transported on the back of a lorry that must be arranged specially with AWS.
+* Sources of exabyte scale data - satellite imaging of the Earth, services like Spotify collecting metadata on billions of users, cloud storage solutions like Dropbox, Internet of Things applications with many sensors, particularly monitoring machines in industries like aerospace, automotive, wind farms, shipping etc.
+
+# Real-time Data Ingestion
+
+* Most data being produced is unstructured and requires some processing before we can interpret it
+* Two ways to ingest data; batch (offline, finite data) and stream (real-time, continuous) processing
+* Features of stream processing
+  * low latency
+  * message delivery at most once, at least once, exactly once
+  * Data can be windowed
+  * fault tolerant
+* Open source alternatives to AWS
+  * Apache Spark. Limited to 1 sec stream window
+  * Apache Kafka
+  * Apache Flume, Storm, Samza, Flink
+
+
+## AWS Kinesis
+* AWS Kinesis collects and processes streams of data
+  * Other services can be used like SQS but Kinesis is optimised for high data rates
+  * Limited to how much data it can output per second so may struggle to process larger files in real-time
+* Kinesis Data Firehose
+  * allows external data sources to submit data using a HTTP endpoint and streams the data into AWS storage solutions like S3, Redshift, Elasticsearch.
+  * It's serverless, handles scaling etc for you
+  * Stream window is minimum 60s so not great for real-time
+* Kinesis Data Streams
+  * real-time streaming data collection. Sub-1 second latency
+  * more work required, setting up server provisioning, writing producers and consumers, etc
+  * looks a lot like Kafka
+* Kinesis Video Streams
+  * Speciliased for time-serialised data like video but also audio and other kinds of data
+* Kinesis Data Analytics
+  * allows SQL queries to be performed on the stream as the data is arriving. SQL queries have special operations available to them for dealing specifically with streams
+  * Can also use Apache Flink to analyse data
+  * compatible with Firehose and Data Streams for input and output
+
+# Storage
+
+* Big data pipelines often have multiple storage steps as different processing tasks are applied to the stream
+* Traditional relational databases optomise for storage cost by normalising data and joining it to return to the user. These days storage is very cheap and for Big Data the expense comes when processing the data, which would be the join operation in a RDBMS. Hence NoSQL solutions like Key-Value stores can be more appropriate for Big Data.
+  * Particularly the Set Theory maths that SQL databases are based on is not efficient when dealing with many-to-many data relationships, the joins become expensive.
+* For that kind of data, databases based on Graph Theory are more performant so a graph DB may be better for that kind of Big Data
+* Data format may also dictate choice, e.g. JSON documents are semi-structured, the position of data can be implicitly important (e.g. orders of arrays, parent-child relationships). Document stores aim to support this structure natively
+* Columnar databases are important in Hadoop and other Big Data technologies as the column-structure results in less seek time on the harddrive and the data can be compressed more easily as more similar data (the columns) is stored next to each other
+* General file storage solutions like S3, EBS, EFS may also be useful
+* Other specialist storage systems exist like Hadoop/AWS EMR for map/reduce operations and Elasticsearch for free-text search
+* Data Lakes can be used as one source for all data of all different formats and stages. Data is structured, semi-structured or unstructured. Schema is flexible and applied at read. AWS recommend S3 for data lakes. Access patterns must be anticipated and planned carefully however, particularly around information security, to ensure the lake can adequately serve applications
+* Data Warehouse looks more like a traditional RDBMS solution. Schema on write, SQL compatible, structured data. Production data can be copied into a data warehouse such as AWS Redshift and optimised for the kinds of queries you want to run against it. This is often used for producing large reports on production data without impacting the production database
+
+# Processing
+
+* Inspecting, cleaning, organising, transforming, sorting data to create something useful
+* Need to decide between batch processing and real-time, depending on requirements
+* Processing could be done by loading data into something like Hadoop or a data warehouse
+* Data can be queried directly in S3 using basic SQL quieries with S3 Select
+* More advanced SQL queries can be performed against data stored in S3 using AWS Athena
+  * Data can be stored in various specialist formats (e.g. columnar formats like parquet or ORC) to make Athena queries more performant and cheaper
+  * Athena is specifically designed for read. It does not support writes/transactions. It therefore lends itself well to Big Data use cases but will likely not be suitable as a general purpose DB
+* There's also S3 range get, which fetches a byte range from an S3 object. You don't always have to download the whole file.
